@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.tmp
+
+# Keys never belong in version control. They live in ~/.cipher_lab by default,
+# but this guards against a stray copy or a CIPHER_LAB_HOME pointed in here.
+identity.json
+contacts.json
+.cipher_lab/
+
+# Editors and OS clutter
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

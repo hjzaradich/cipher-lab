@@ -1,0 +1,9 @@
+# Cipher Lab runs on the standard library alone.
+#
+# The one exception is the Public key cipher, which needs real cryptography
+# rather than a hand-rolled implementation. Without PyNaCl the app still starts
+# and every other cipher works -- the Public key entry simply does not appear.
+#
+#     pip install -r requirements.txt
+
+pynacl>=1.5

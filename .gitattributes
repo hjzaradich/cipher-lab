@@ -1,0 +1,11 @@
+# Shell launchers must stay LF. A CRLF line ending turns the shebang into
+# "#!/bin/sh\r", which macOS and Linux report as "bad interpreter".
+*.command  text eol=lf
+*.sh       text eol=lf
+
+# Batch files are the opposite case: Windows wants CRLF.
+*.bat      text eol=crlf
+
+*.py       text
+*.md       text
+*.txt      text
