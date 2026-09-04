@@ -6,26 +6,42 @@ in without touching the interface.
 
 ## Running it
 
-Runs on Windows, macOS and Linux. Needs Python 3.10+ with Tkinter.
+Runs on Windows, macOS and Linux.
 
-Everything except **Public key** works with no packages installed. Public-key
-messaging needs PyNaCl:
+**Requirements: Python 3.9 or newer, with Tk 8.6.** The Tk version is the part
+that catches people out. Check both in one line:
 
 ```
-pip install pynacl
+python3 -c "import sys, tkinter; print(sys.version); print('Tk', tkinter.TkVersion)"
 ```
 
-Without it the app still starts and the other entries work — the **Public key**
-entry simply does not appear.
+You need `Tk 8.6`. If it prints `Tk 8.5` the app will fail when you select
+Caesar, because its shift control is a `ttk.Spinbox` and that widget does not
+exist before Tk 8.6.
+
+- **macOS** — the python3 that comes with the Xcode command line tools is
+  usually Tk 8.5, so install Python from [python.org](https://www.python.org/downloads/)
+  (its installer bundles Tk 8.6). With Homebrew instead: `brew install python
+  python-tk`.
+- **Windows** — the python.org installer includes Tk 8.6 already.
+- **Linux** — `sudo apt install python3-tk` on Debian or Ubuntu.
+
+Then, for public-key messaging only:
+
+```
+pip install -r requirements.txt
+```
+
+Everything else runs on the standard library. Without PyNaCl the app still
+starts and every other cipher works — the **Public key** entry simply does not
+appear.
+
+Launching:
 
 - **Windows** — double-click **Cipher Lab.bat**, or run `python main.py`.
-- **macOS** — `chmod +x "Cipher Lab.command"` once, then double-click it. Or run
-  `python3 main.py`.
+- **macOS** — double-click **Cipher Lab.command**. It is stored executable in
+  git, so no `chmod` is needed after cloning. Or run `python3 main.py`.
 - **Linux** — `python3 main.py`.
-
-Tkinter ships with the python.org installers on Windows and macOS. If you use
-Homebrew Python you may need `brew install python-tk`; on Debian or Ubuntu,
-`sudo apt install python3-tk`.
 
 ## The ciphers
 
