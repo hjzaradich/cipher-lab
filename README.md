@@ -267,6 +267,16 @@ constants at the top of that file — change `ACCENT` and the buttons, slider,
 selections and highlights all follow. It tints the Windows title bar to match, where
 that is available.
 
+## License
+
+MIT — see [LICENSE](LICENSE). Do what you like with it, keep the copyright
+notice, and it comes with no warranty.
+
+The downloadable bundles also contain Python, Tk and PyNaCl, which carry their
+own licenses (PSF, BSD-style and Apache 2.0 respectively; PyNaCl in turn embeds
+libsodium under ISC). PyInstaller packs those license files into the app, so a
+bundle is redistributable as it stands.
+
 ## Files
 
 - `main.py` — entry point
