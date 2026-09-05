@@ -120,14 +120,25 @@ jobs:
 
           ### First launch
 
-          **macOS** -- these are not signed by an Apple developer account, so
-          Gatekeeper blocks the first launch. Right-click the app, choose
-          **Open**, then confirm. After that it opens normally. If macOS still
-          refuses:
+          **macOS** -- ad-hoc signed but not notarized, so Gatekeeper blocks
+          the first launch.
+
+          On **macOS 15 Sequoia and later**, the right-click -> Open trick no
+          longer exists. Double-click the app and let it be refused, then go to
+          **System Settings -> Privacy & Security**, scroll to **Security**, and
+          click **Open Anyway**. The entry only appears after a blocked attempt.
+
+          On **macOS 14 and earlier**, right-click the app and choose **Open**.
+
+          Either version, from Terminal:
 
           ```
-          xattr -d com.apple.quarantine "/Applications/Cipher Lab.app"
+          xattr -dr com.apple.quarantine "/Applications/Cipher Lab.app"
           ```
+
+          The `-r` is required: the quarantine flag is on the files inside the
+          bundle too. If macOS calls the app "damaged", that is this same
+          problem, not a bad download.
 
           **Windows** -- SmartScreen may warn on first run. Choose **More info**,
           then **Run anyway**.

@@ -60,14 +60,36 @@ an Intel Mac. On an Intel Mac, run from source as described above — it works
 exactly the same, it just needs Python with Tk 8.6 first. You can also build a
 bundle locally on that Mac with `pyinstaller CipherLab.spec`.
 
-**On macOS the first launch is blocked.** These builds are not signed by an
-Apple developer account, so Gatekeeper refuses them. Right-click the app and
-choose **Open**, then confirm; after that it opens by double-click like
-anything else. If macOS still refuses:
+**On macOS the first launch is blocked.** These builds are ad-hoc signed but
+not notarized by an Apple developer account, so Gatekeeper stops them. How you
+get past it depends on your macOS version.
+
+**macOS 15 Sequoia and later.** The old right-click → Open trick was removed in
+Sequoia, so there is no **Open** or **Confirm** in the context menu any more.
+Instead:
+
+1. Double-click the app and let it be refused.
+2. Open **System Settings → Privacy & Security**.
+3. Scroll to the **Security** section. A line naming Cipher Lab appears there,
+   but only after step 1.
+4. Click **Open Anyway** and authenticate.
+
+**macOS 14 Sonoma and earlier.** Right-click the app, choose **Open**, then
+confirm in the dialog.
+
+**Any version, from Terminal.** One command, and the app then opens by
+double-click like anything else:
 
 ```
-xattr -d com.apple.quarantine "/Applications/Cipher Lab.app"
+xattr -dr com.apple.quarantine "/Applications/Cipher Lab.app"
 ```
+
+The `-r` matters: an app is a folder of files, and the quarantine flag sits on
+the nested ones too, so a non-recursive `xattr -d` often leaves it blocked.
+
+If macOS says the app is **"damaged and can't be opened"**, that is the same
+quarantine problem wearing a more alarming label, not a corrupted download —
+the `xattr -dr` command above fixes it.
 
 Windows may show a SmartScreen warning on first run: **More info**, then
 **Run anyway**. Both warnings mean "nobody paid to sign this", not "this is
