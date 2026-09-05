@@ -3,6 +3,10 @@ __pycache__/
 .pytest_cache/
 *.tmp
 
+# PyInstaller output. The spec file is tracked; what it builds is not.
+build/
+dist/
+
 # Keys never belong in version control. They live in ~/.cipher_lab by default,
 # but this guards against a stray copy or a CIPHER_LAB_HOME pointed in here.
 identity.json

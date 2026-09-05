@@ -1,0 +1,128 @@
+# Builds self-contained apps so nobody has to install Python, Tk or PyNaCl.
+#
+# PyInstaller cannot cross-compile, so each platform is built on its own
+# runner. Two macOS jobs on purpose: macos-13 is Intel and macos-14 is Apple
+# Silicon, and an Apple Silicon build will not run on an Intel Mac at all.
+#
+# Push a tag to publish a release:  git tag v1.0.0 && git push origin v1.0.0
+# Or run it by hand from the Actions tab to get downloadable artifacts.
+
+name: Build apps
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false     # one platform failing should not hide the others
+      matrix:
+        include:
+          - os: windows-latest
+            label: windows-x64
+          - os: macos-13
+            label: macos-intel
+          - os: macos-14
+            label: macos-apple-silicon
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+
+      # The GUI suites need a display, which these runners do not reliably
+      # provide, so CI gates on the headless one. It covers the keystore and
+      # the crypto -- the parts most likely to break in a packaged build.
+      - name: Test the crypto from source
+        run: python tests/test_crypto.py
+
+      - name: Build
+        run: pyinstaller CipherLab.spec --noconfirm
+
+      # PyNaCl is a compiled libsodium binding. If it is missing the app still
+      # starts and fails only when someone picks the Public key cipher, so
+      # check for it here rather than letting a user discover it.
+      - name: Check libsodium is inside the bundle (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          test -d "dist/Cipher Lab.app" || { echo "::error::no .app was produced"; exit 1; }
+          if ! find "dist/Cipher Lab.app" -name "*sodium*" | grep -q .; then
+            echo "::error::libsodium is missing from the bundle"
+            exit 1
+          fi
+          echo "libsodium present:"
+          find "dist/Cipher Lab.app" -name "*sodium*"
+
+      - name: Check the exe was produced (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "dist/Cipher Lab.exe")) { throw "no .exe was produced" }
+          "{0:N1} MB" -f ((Get-Item "dist/Cipher Lab.exe").Length / 1MB)
+
+      # ditto, not zip: it preserves the bundle's symlinks and executable bits,
+      # which a plain zip mangles and macOS then refuses to open.
+      - name: Package (macOS)
+        if: runner.os == 'macOS'
+        run: ditto -c -k --keepParent "dist/Cipher Lab.app" "Cipher-Lab-${{ matrix.label }}.zip"
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Compress-Archive -Path "dist/Cipher Lab.exe" -DestinationPath "Cipher-Lab-${{ matrix.label }}.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Cipher-Lab-${{ matrix.label }}
+          path: Cipher-Lab-${{ matrix.label }}.zip
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" artifacts/*.zip \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Cipher Lab $GITHUB_REF_NAME" \
+            --notes 'Self-contained builds -- no Python, Tk or PyNaCl needed.
+
+          | Download | For |
+          | --- | --- |
+          | `Cipher-Lab-macos-apple-silicon.zip` | Macs with M1 or later |
+          | `Cipher-Lab-macos-intel.zip` | Intel Macs |
+          | `Cipher-Lab-windows-x64.zip` | Windows 10 or 11 |
+
+          **macOS:** these are not signed by an Apple developer account, so the
+          first launch is blocked. Right-click the app and choose **Open**, then
+          confirm — after that it opens normally. If macOS still refuses, run:
+
+          ```
+          xattr -d com.apple.quarantine "/Applications/Cipher Lab.app"
+          ```
+
+          **Windows:** SmartScreen may warn on first run. Choose **More info**,
+          then **Run anyway**.'

@@ -43,6 +43,55 @@ Launching:
   git, so no `chmod` is needed after cloning. Or run `python3 main.py`.
 - **Linux** — `python3 main.py`.
 
+## Downloads (no Python needed)
+
+The Releases page carries self-contained builds with Python, Tk and PyNaCl
+packed inside. Download, unzip, run — nothing to install, and no Tk version to
+worry about.
+
+| Download | For |
+| --- | --- |
+| `Cipher-Lab-macos-apple-silicon.zip` | Macs with M1 or later |
+| `Cipher-Lab-macos-intel.zip` | Intel Macs |
+| `Cipher-Lab-windows-x64.zip` | Windows 10 or 11 |
+
+**On macOS the first launch is blocked.** These builds are not signed by an
+Apple developer account, so Gatekeeper refuses them. Right-click the app and
+choose **Open**, then confirm; after that it opens by double-click like
+anything else. If macOS still refuses:
+
+```
+xattr -d com.apple.quarantine "/Applications/Cipher Lab.app"
+```
+
+Windows may show a SmartScreen warning on first run: **More info**, then
+**Run anyway**. Both warnings mean "nobody paid to sign this", not "this is
+broken" — signing costs $99/year from Apple and rather more from a Windows CA.
+
+### Building one yourself
+
+```
+pip install pyinstaller
+pyinstaller CipherLab.spec
+```
+
+The result lands in `dist/`. PyInstaller cannot cross-compile, so a macOS app
+has to be built on a Mac and a Windows exe on Windows — which is what
+`.github/workflows/build.yml` is for. Push a tag and it builds all three and
+publishes a release:
+
+```
+git tag v1.0.0 && git push origin v1.0.0
+```
+
+Or run it from the Actions tab to get the builds as artifacts without making a
+release.
+
+The spec pulls PyNaCl in with `collect_all`, because its compiled `_sodium`
+extension is invisible to an import scan. Get that wrong and the app starts
+happily and fails only when someone selects the Public key cipher, so CI checks
+the binary is really inside the macOS bundle before publishing anything.
+
 ## The ciphers
 
 | Cipher | Key | Notes |
