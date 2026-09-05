@@ -52,8 +52,13 @@ worry about.
 | Download | For |
 | --- | --- |
 | `Cipher-Lab-macos-apple-silicon.zip` | Macs with M1 or later |
-| `Cipher-Lab-macos-intel.zip` | Intel Macs |
 | `Cipher-Lab-windows-x64.zip` | Windows 10 or 11 |
+
+**There is no Intel Mac download.** GitHub retired its Intel macOS runners, so
+there is no machine to build one on, and an Apple Silicon build will not run on
+an Intel Mac. On an Intel Mac, run from source as described above — it works
+exactly the same, it just needs Python with Tk 8.6 first. You can also build a
+bundle locally on that Mac with `pyinstaller CipherLab.spec`.
 
 **On macOS the first launch is blocked.** These builds are not signed by an
 Apple developer account, so Gatekeeper refuses them. Right-click the app and
@@ -77,7 +82,7 @@ pyinstaller CipherLab.spec
 
 The result lands in `dist/`. PyInstaller cannot cross-compile, so a macOS app
 has to be built on a Mac and a Windows exe on Windows — which is what
-`.github/workflows/build.yml` is for. Push a tag and it builds all three and
+`.github/workflows/build.yml` is for. Push a tag and it builds both and
 publishes a release:
 
 ```

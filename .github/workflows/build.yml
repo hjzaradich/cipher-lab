@@ -1,8 +1,9 @@
 # Builds self-contained apps so nobody has to install Python, Tk or PyNaCl.
 #
 # PyInstaller cannot cross-compile, so each platform is built on its own
-# runner. Two macOS jobs on purpose: macos-13 is Intel and macos-14 is Apple
-# Silicon, and an Apple Silicon build will not run on an Intel Mac at all.
+# runner. There is no Intel Mac build: GitHub has retired its Intel macOS
+# runners, every hosted macOS runner is Apple Silicon now, and an arm64 binary
+# will not run on an Intel Mac. Intel Mac users run from source instead.
 #
 # Push a tag to publish a release:  git tag v1.0.0 && git push origin v1.0.0
 # Or run it by hand from the Actions tab to get downloadable artifacts.
@@ -27,9 +28,7 @@ jobs:
         include:
           - os: windows-latest
             label: windows-x64
-          - os: macos-13
-            label: macos-intel
-          - os: macos-14
+          - os: macos-latest
             label: macos-apple-silicon
     steps:
       - uses: actions/checkout@v4
@@ -101,28 +100,50 @@ jobs:
           path: artifacts
           merge-multiple: true
 
-      - name: Create the release
-        env:
-          GH_TOKEN: ${{ github.token }}
+      # The notes go through a file: a quoted inline string here is far too
+      # easy to break, and a broken quote only shows up at release time.
+      - name: Write the release notes
         run: |
-          gh release create "$GITHUB_REF_NAME" artifacts/*.zip \
-            --repo "$GITHUB_REPOSITORY" \
-            --title "Cipher Lab $GITHUB_REF_NAME" \
-            --notes 'Self-contained builds -- no Python, Tk or PyNaCl needed.
+          cat > notes.md <<'NOTES'
+          Self-contained builds -- no Python, Tk or PyNaCl needed. Download,
+          unzip, run.
 
           | Download | For |
           | --- | --- |
           | `Cipher-Lab-macos-apple-silicon.zip` | Macs with M1 or later |
-          | `Cipher-Lab-macos-intel.zip` | Intel Macs |
           | `Cipher-Lab-windows-x64.zip` | Windows 10 or 11 |
 
-          **macOS:** these are not signed by an Apple developer account, so the
-          first launch is blocked. Right-click the app and choose **Open**, then
-          confirm — after that it opens normally. If macOS still refuses, run:
+          On an **Intel Mac** there is no download: GitHub has retired its Intel
+          macOS runners, so there is no machine to build one on, and an Apple
+          Silicon build will not run on an Intel Mac. Run from source instead --
+          see the README.
+
+          ### First launch
+
+          **macOS** -- these are not signed by an Apple developer account, so
+          Gatekeeper blocks the first launch. Right-click the app, choose
+          **Open**, then confirm. After that it opens normally. If macOS still
+          refuses:
 
           ```
           xattr -d com.apple.quarantine "/Applications/Cipher Lab.app"
           ```
 
-          **Windows:** SmartScreen may warn on first run. Choose **More info**,
-          then **Run anyway**.'
+          **Windows** -- SmartScreen may warn on first run. Choose **More info**,
+          then **Run anyway**.
+
+          Both warnings mean "nobody paid to sign this", not "this is broken".
+
+          ### A note on the crypto
+
+          Public-key messaging uses Curve25519 and XSalsa20-Poly1305 through
+          libsodium. Exchange public keys over a channel you trust and confirm
+          them out of band -- nothing here proves a key belongs to who you think.
+          NOTES
+          echo "--- notes.md ---"; cat notes.md
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" artifacts/*.zip             --repo "$GITHUB_REPOSITORY"             --title "Cipher Lab $GITHUB_REF_NAME"             --notes-file notes.md
